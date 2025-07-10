@@ -145,6 +145,7 @@ public class SheetViewController: UIViewController {
     }
     
     let transition: SheetTransition
+    weak var presenter: UIViewController?
     
     public var shouldDismiss: ((SheetViewController) -> Bool)?
     public var didDismiss: ((SheetViewController) -> Void)?
@@ -238,11 +239,9 @@ public class SheetViewController: UIViewController {
     
     public override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
-        if let presenter = self.transition.presenter, self.options.shrinkPresentingViewController {
-            self.transition.restorePresentor(presenter, completion: { _ in
-                self.didDismiss?(self)
-            })
-        } else if !self.options.useInlineMode {
+        // If the sheet is being dismissed, and it's not in inline mode, the didDismiss callback should be called.
+        // This is to prevent the callback from being fired when a new view controller is presented on top of the sheet.
+        if self.isBeingDismissed, !self.options.useInlineMode {
             self.didDismiss?(self)
         }
     }
@@ -400,7 +399,7 @@ public class SheetViewController: UIViewController {
                 UIView.animate(withDuration: 0.3, delay: 0, options: [.curveEaseOut], animations: {
                     self.contentViewController.view.transform = CGAffineTransform.identity
                     self.contentViewHeightConstraint.constant = self.height(for: self.currentSize)
-                    self.transition.setPresentor(percentComplete: 0)
+                    (self.presentationController as? SheetPresentationController)?.setPresentor(percentComplete: 0)
                     self.overlayView.alpha = 1
                 }, completion: { _ in
                     self.isPanning = false
@@ -411,7 +410,7 @@ public class SheetViewController: UIViewController {
                 
                 if offset > 0 {
                     let percent = max(0, min(1, offset / max(1, newHeight)))
-                    self.transition.setPresentor(percentComplete: percent)
+                    (self.presentationController as? SheetPresentationController)?.setPresentor(percentComplete: percent)
                     self.overlayView.alpha = 1 - percent
                     self.contentViewController.view.transform = CGAffineTransform(translationX: 0, y: offset)
                 } else {
@@ -438,7 +437,7 @@ public class SheetViewController: UIViewController {
                         animations: {
                         self.contentViewController.view.transform = CGAffineTransform(translationX: 0, y: self.contentViewController.view.bounds.height)
                         self.view.backgroundColor = UIColor.clear
-                        self.transition.setPresentor(percentComplete: 1)
+                        (self.presentationController as? SheetPresentationController)?.setPresentor(percentComplete: 1)
                         self.overlayView.alpha = 0
                     }, completion: { complete in
                         self.attemptDismiss(animated: false)
@@ -481,7 +480,7 @@ public class SheetViewController: UIViewController {
                     animations: {
                     self.contentViewController.view.transform = CGAffineTransform.identity
                     self.contentViewHeightConstraint.constant = newContentHeight
-                    self.transition.setPresentor(percentComplete: 0)
+                    (self.presentationController as? SheetPresentationController)?.setPresentor(percentComplete: 0)
                     self.overlayView.alpha = 1
                     self.view.layoutIfNeeded()
                 }, completion: { complete in
@@ -783,6 +782,10 @@ extension SheetViewController: UIViewControllerTransitioningDelegate {
     public func animationController(forDismissed dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
         transition.presenting = false
         return transition
+    }
+    
+    public func presentationController(forPresented presented: UIViewController, presenting: UIViewController?, source: UIViewController) -> UIPresentationController? {
+        return SheetPresentationController(presentedViewController: presented, presenting: presenting)
     }
 }
 
