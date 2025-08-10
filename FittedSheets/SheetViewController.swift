@@ -237,14 +237,14 @@ public class SheetViewController: UIViewController {
         super.viewWillDisappear(animated)
     }
     
-    public override func viewDidDisappear(_ animated: Bool) {
-        super.viewDidDisappear(animated)
-        // If the sheet is being dismissed, and it's not in inline mode, the didDismiss callback should be called.
-        // This is to prevent the callback from being fired when a new view controller is presented on top of the sheet.
-        if self.isBeingDismissed, !self.options.useInlineMode {
-            self.didDismiss?(self)
-        }
-    }
+//    public override func viewDidDisappear(_ animated: Bool) {
+//        super.viewDidDisappear(animated)
+//        // If the sheet is being dismissed, and it's not in inline mode, the didDismiss callback should be called.
+//        // This is to prevent the callback from being fired when a new view controller is presented on top of the sheet.
+//        if self.isBeingDismissed, !self.options.useInlineMode {
+//            self.didDismiss?(self)
+//        }
+//    }
     
     /// Handle a scroll view in the child view controller by watching for the offset for the scrollview and taking priority when at the top (so pulling up/down can grow/shrink the sheet instead of bouncing the child's scroll view)
     public func handleScrollView(_ scrollView: UIScrollView) {
